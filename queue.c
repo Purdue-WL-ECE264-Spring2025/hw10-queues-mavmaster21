@@ -104,15 +104,15 @@ int number_of_moves(struct game_state start) {
     add_board_visited(&visited_head, start.tiles);
     enqueue(&q, start);
     
+    int result = -1; // Default result if no solution found
+    
     while (q.data.head != NULL) {
         struct game_state current = dequeue(&q); // Dequeue the current state
         
         // Check if the current state is the goal state
         if (is_solved(&current)) {
-            int moves = current.num_steps;
-            free_visited(visited_head); // Clean up before returning
-            printf("%d\n",moves);
-            return moves;
+            result = current.num_steps;
+            break; // Exit the loop when solution is found
         }
         
         // Try all four possible moves
@@ -146,5 +146,8 @@ int number_of_moves(struct game_state start) {
     // Clean up memory
     free_visited(visited_head);
     
-    return -1; // No solution found
+    // Free the remaining nodes in the queue
+    free_list(q.data);
+    
+    return result; // Return the result (-1 if no solution found)
 }
