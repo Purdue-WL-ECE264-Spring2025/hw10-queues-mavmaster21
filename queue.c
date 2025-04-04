@@ -18,8 +18,8 @@ struct game_state dequeue(struct queue *q)
     return deserialize(value); 
 }
 
-bool is_solved(struct game_state *state) {
-    // Define the solved configuration (goal state)
+bool is_solved(struct game_state *state) 
+{
     uint8_t goal[4][4] = {
         {1, 2, 3, 4},
         {5, 6, 7, 8},
@@ -27,10 +27,13 @@ bool is_solved(struct game_state *state) {
         {13, 14, 15, 0}
     };
 
-    // Compare current state with the goal state
-    for (int row = 0; row < 4; row++) {
-        for (int col = 0; col < 4; col++) {
-            if (state->tiles[row][col] != goal[row][col]) {
+    //compare state
+    for (int row = 0; row < 4; row++) 
+    {
+        for (int col = 0; col < 4; col++) 
+        {
+            if (state->tiles[row][col] != goal[row][col]) 
+            {
                 return false;
             }
         }
@@ -38,26 +41,30 @@ bool is_solved(struct game_state *state) {
     return true;
 }
 
-// Helper structure to store just the board configuration
-struct board_config {
+//the gd serialized thingy is not helpful for this
+struct board_config 
+{
     uint8_t tiles[4][4];
     struct board_config *next;
 };
 
-// Function to check if a board configuration has been visited
-bool is_board_visited(struct board_config *visited_head, uint8_t tiles[4][4]) {
+bool is_board_visited(struct board_config *visited_head, uint8_t tiles[4][4]) 
+{
     struct board_config *current = visited_head;
-    while (current != NULL) {
-        // Compare the entire 4x4 grid
+    while (current != NULL) 
+    {
+        //compare grids
         bool match = true;
-        for (int row = 0; row < 4 && match; row++) {
-            for (int col = 0; col < 4 && match; col++) {
-                if (current->tiles[row][col] != tiles[row][col]) {
+        for (int row = 0; row < 4 && match; row++) 
+        {
+            for (int col = 0; col < 4 && match; col++) 
+            {
+                if (current->tiles[row][col] != tiles[row][col]) 
+                {
                     match = false;
                 }
             }
         }
-        
         if (match) {
             return true;
         }
@@ -66,76 +73,71 @@ bool is_board_visited(struct board_config *visited_head, uint8_t tiles[4][4]) {
     return false;
 }
 
-// Function to add a board configuration to the visited list
-void add_board_visited(struct board_config **visited_head, uint8_t tiles[4][4]) {
+void add_board_visited(struct board_config **visited_head, uint8_t tiles[4][4]) 
+{
     struct board_config *new_node = malloc(sizeof(struct board_config));
-    
-    // Copy the tile configuration
-    for (int row = 0; row < 4; row++) {
-        for (int col = 0; col < 4; col++) {
+
+    for (int row = 0; row < 4; row++) 
+    {
+        for (int col = 0; col < 4; col++) 
+        {
             new_node->tiles[row][col] = tiles[row][col];
         }
     }
-    
     new_node->next = *visited_head;
     *visited_head = new_node;
 }
 
-// Function to free the visited list
-void free_visited(struct board_config *visited_head) {
+//it needs freed
+void free_visited(struct board_config *visited_head) 
+{
     struct board_config *current = visited_head;
-    while (current != NULL) {
+    while (current != NULL) 
+    {
         struct board_config *next = current->next;
         free(current);
         current = next;
     }
 }
 
-int number_of_moves(struct game_state start) {
-    // If already solved, return 0
-    if (is_solved(&start)) {
-        return 0;
+int number_of_moves(struct game_state start) 
+{
+    
+    if (is_solved(&start)) 
+    {
+        return 0;//default soln
     }
     
-    struct queue q = {0}; // Initialize the queue
-    struct board_config *visited_head = NULL; // Initialize visited list
-    
-    // Add the initial state to visited and queue
+    struct queue q = {0}; //initialize queue
+    struct board_config *visited_head = NULL; 
     add_board_visited(&visited_head, start.tiles);
-    enqueue(&q, start);
+    enqueue(&q, start); //add initial state
     
-    int result = -1; // Default result if no solution found
+    int result = -1; //default
     
-    while (q.data.head != NULL) {
-        struct game_state current = dequeue(&q); // Dequeue the current state
-        
-        // Check if the current state is the goal state
-        if (is_solved(&current)) {
+    while (q.data.head != NULL) 
+    {
+        struct game_state current = dequeue(&q);//deque to check if we won
+        if (is_solved(&current)) 
+        {
             result = current.num_steps;
-            break; // Exit the loop when solution is found
+            break; 
         }
-        
-        // Try all four possible moves
-        struct game_state moves[4];
-        
-        // Make copies of the current state for each move
+        struct game_state moves[4];// Try each direction
         moves[0] = current;
         moves[1] = current;
         moves[2] = current;
         moves[3] = current;
-        
-        // Apply each move
         move_up(&moves[0]);
         move_down(&moves[1]);
         move_left(&moves[2]);
         move_right(&moves[3]);
         
-        // Check and enqueue valid moves
         for (int i = 0; i < 4; i++) {
-            // Check if the move actually changed the state (by comparing num_steps)
-            if (moves[i].num_steps > current.num_steps) {
-                // If this state hasn't been visited yet, add it to queue and visited list
-                if (!is_board_visited(visited_head, moves[i].tiles)) {
+            if (moves[i].num_steps > current.num_steps) 
+            {
+                if (!is_board_visited(visited_head, moves[i].tiles)) 
+                {
                     add_board_visited(&visited_head, moves[i].tiles);
                     enqueue(&q, moves[i]);
                 }
@@ -143,11 +145,8 @@ int number_of_moves(struct game_state start) {
         }
     }
     
-    // Clean up memory
     free_visited(visited_head);
-    
-    // Free the remaining nodes in the queue
     free_list(q.data);
     
-    return result; // Return the result (-1 if no solution found)
+    return result; 
 }
